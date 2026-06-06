@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Historia del Urbanismo Crítico · Constelación Navegable</title>
+<style>
+:root{
+  --bg:#02030a;
+  --panel:#080b12ee;
+  --line:#ffffff18;
+  --text:#eef3ff;
+  --muted:#9aa7bd;
+  --gold:#f1b934;
+  --blue:#4aa3ff;
+  --orange:#ff784a;
+  --violet:#b56cff;
+  --cyan:#2ed7d2;
+  --green:#9ad45a;
+  --lime:#d7ee52;
+  --pink:#ff72c7;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:Arial, Helvetica, sans-serif}
+body{background:
+  radial-gradient(circle at 50% 45%, #101a2d 0%, #050812 38%, #000 78%),
+  linear-gradient(180deg,#000,#04060c);
+}
+#app{position:relative;width:100vw;height:100vh;min-height:720px;overflow:hidden}
+
+/* Star field */
+#stars,#network,#fx{position:absolute;inset:0;width:100%;height:100%;display:block}
+#stars{z-index:0}
+#network{z-index:3;cursor:grab;touch-action:none}
+#network.drag{cursor:grabbing}
+#fx{z-index:1;pointer-events:none;opacity:.95}
+
+.topbar{
+  position:absolute;top:0;left:0;right:0;height:48px;z-index:12;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#03050ddf,#03050d6e 65%,transparent);
+  border-bottom:1px solid #ffffff10;
+  backdrop-filter: blur(10px);
+}
+.brand{
+  position:absolute;left:18px;display:flex;gap:10px;align-items:center;color:#fff;
+  letter-spacing:.18em;text-transform:uppercase;font-size:11px;font-weight:800;
+}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 18px var(--gold)}
+.nav-title{font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:#dce8ffcc}
+.actions{position:absolute;right:16px;display:flex;gap:8px;align-items:center}
+button,.chip{
+  background:#0b101bdd;border:1px solid #ffffff1c;color:#dce6ff;border-radius:11px;
+  padding:8px 11px;font-size:11px;font-weight:700;letter-spacing:.02em;cursor:pointer;
+  box-shadow:0 8px 28px #0007;transition:.2s ease;
+}
+button:hover,.chip:hover{border-color:#ffffff44;background:#121b2d}
+button.active,.chip.active{border-color:var(--gold);box-shadow:0 0 20px #f1b93433;color:#fff}
+
+.header{
+  position:absolute;top:64px;left:26px;z-index:10;width:380px;pointer-events:none;
+}
+.header h1{
+  font-size:34px;line-height:.94;letter-spacing:.015em;text-transform:uppercase;
+  text-shadow:0 8px 30px #000,0 0 18px #ffffff18;
+}
+.header .subtitle{margin-top:10px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#dce6ff}
+.header p{margin-top:22px;color:#c3ccdc;font-size:12px;line-height:1.65;max-width:330px}
+
+.searchbox{
+  position:absolute;top:61px;left:50%;transform:translateX(-50%);
+  z-index:14;width:min(520px,35vw);min-width:330px;
+  display:flex;align-items:center;gap:10px;
+  background:#050914df;border:1px solid #ffffff20;border-radius:14px;padding:9px 13px;
+  backdrop-filter:blur(16px);box-shadow:0 14px 45px #0009;
+}
+.searchbox span{font-size:13px;color:#aab6c8}
+.searchbox input{
+  width:100%;background:transparent;border:none;outline:none;color:#fff;
+  font-size:12px;letter-spacing:.02em;
+}
+.searchbox input::placeholder{color:#8793a7}
+
+.timeline{
+  position:absolute;left:24px;top:282px;bottom:128px;width:260px;z-index:11;
+  display:flex;flex-direction:column;gap:9px;
+}
+.period{
+  display:grid;grid-template-columns:29px 1fr;gap:10px;align-items:center;
+  padding:8px 10px 8px 7px;border:1px solid transparent;border-radius:14px;
+  background:#00000010;cursor:pointer;transition:.2s ease;
+}
+.period:hover{background:#10182bd0;border-color:#ffffff1c}
+.period.active{background:#0d1526d8;border-color:currentColor;box-shadow:0 0 26px currentColor}
+.period .num{
+  width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;
+  background:currentColor;color:#05080d;box-shadow:0 0 18px currentColor;
+}
+.period .name{font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:900;color:currentColor}
+.period .years{font-size:10px;color:#b7c2d0;margin-top:3px}
+
+.legend{
+  position:absolute;right:24px;top:64px;width:280px;z-index:11;
+  background:var(--panel);border:1px solid #ffffff20;border-radius:18px;padding:16px;
+  backdrop-filter:blur(18px);box-shadow:0 24px 80px #000b;
+}
+.legend h3,.reader h3,.controls h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;color:#fff}
+.legend .row{display:flex;align-items:center;gap:9px;color:#c9d2df;font-size:11px;margin:9px 0}
+.sw{width:12px;height:12px;border-radius:50%;box-shadow:0 0 13px currentColor;flex:0 0 auto}
+
+.reader{
+  position:absolute;right:24px;top:310px;bottom:92px;width:330px;z-index:15;
+  background:var(--panel);border:1px solid #ffffff22;border-radius:18px;overflow:hidden;
+  backdrop-filter:blur(18px);box-shadow:0 24px 100px #000c;transform:translateX(382px);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .2s ease;
+}
+.reader.open{transform:translateX(0)}
+.reader-head{
+  padding:15px 16px;border-bottom:1px solid #ffffff12;display:flex;align-items:start;gap:12px;
+  background:linear-gradient(180deg,#111929e8,#080b12f0);
+}
+.reader-icon{
+  width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:#ffffff0b;
+  border:1px solid #ffffff18;box-shadow:inset 0 0 30px #ffffff06;
+}
+.reader-title{flex:1}
+.reader-title h2{font-size:16px;text-transform:uppercase;line-height:1.1}
+.reader-title small{display:block;margin-top:6px;color:#aeb9ca;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.reader-close{font-size:18px;line-height:1;padding:3px 7px;background:transparent;border:none;box-shadow:none;color:#aab4c4}
+.reader-body{height:calc(100% - 80px);overflow:auto;padding:16px}
+.reader-section{margin-bottom:17px}
+.reader-section .label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8390a6;margin-bottom:6px;font-weight:900}
+.reader-section .text{font-size:12px;line-height:1.65;color:#d2d8e4}
+.reader-section ul{margin-left:15px;color:#d2d8e4;font-size:12px;line-height:1.55}
+.reader-section li{margin-bottom:4px}
+.rel-pill{
+  display:inline-block;margin:3px 4px 3px 0;padding:4px 7px;border:1px solid #ffffff1f;border-radius:999px;
+  font-size:10px;color:#dce6ff;background:#ffffff0a;cursor:pointer;
+}
+.rel-pill:hover{border-color:#ffffff55}
+
+.controls{
+  position:absolute;left:24px;bottom:22px;width:260px;z-index:12;
+  background:#050914dd;border:1px solid #ffffff20;border-radius:16px;padding:14px;
+  backdrop-filter:blur(16px);box-shadow:0 16px 50px #000b;
+}
+.controls .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.controls .hint{margin-top:10px;color:#94a1b5;font-size:10px;line-height:1.55}
+.modebar{
+  position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:12;
+  display:flex;gap:8px;align-items:center;background:#050914dd;border:1px solid #ffffff20;
+  border-radius:16px;padding:10px;backdrop-filter:blur(16px);box-shadow:0 18px 60px #000b;
+}
+.stats{
+  position:absolute;right:24px;bottom:22px;z-index:12;display:flex;gap:10px;
+}
+.stat{
+  min-width:94px;background:#050914dd;border:1px solid #ffffff1d;border-radius:14px;padding:10px 12px;
+  backdrop-filter:blur(16px);box-shadow:0 18px 60px #000b;text-align:center;
+}
+.stat b{display:block;font-size:16px;color:#fff}.stat span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#98a4b9}
+
+.big-label{
+  position:absolute;left:50%;bottom:72px;transform:translateX(-50%);z-index:2;pointer-events:none;
+  color:#ffffff08;font-size:8vw;line-height:1;font-weight:900;letter-spacing:.12em;text-transform:uppercase;
+  text-align:center;white-space:nowrap;text-shadow:0 0 70px #ffffff10;
+}
+.caption{
+  position:absolute;left:50%;bottom:6px;transform:translateX(-50%);z-index:11;color:#aeb7c7;font-size:11px;
+  letter-spacing:.04em;text-align:center;padding:8px 18px;border-radius:999px;background:#00000045;border:1px solid #ffffff10;
+}
+.mobile-warning{display:none}
+
+@media (max-width:1100px){
+  .legend,.reader{width:300px;right:14px}
+  .header{left:16px;width:310px}.header h1{font-size:27px}.timeline{left:14px;width:220px}
+  .searchbox{width:360px}
+}
+@media (max-width:820px){
+  .mobile-warning{display:block;position:absolute;z-index:60;inset:auto 12px 12px 12px;background:#111827e8;border:1px solid #ffffff22;border-radius:16px;padding:12px;color:#dce6ff;font-size:12px;line-height:1.45}
+  .legend,.timeline,.controls,.stats,.caption{display:none}
+  .header{top:64px;left:14px;width:290px}.header p{display:none}.searchbox{top:146px;left:14px;transform:none;min-width:0;width:calc(100% - 28px)}
+  .reader{right:12px;left:12px;bottom:12px;top:auto;width:auto;height:46vh;transform:translateY(calc(100% + 24px))}
+  .reader.open{transform:translateY(0)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="stars"></canvas>
+  <canvas id="fx"></canvas>
+  <canvas id="network" aria-label="Diagrama navegable de relaciones sobre historia del urbanismo crítico"></canvas>
+
+  <div class="topbar">
+    <div class="brand"><div class="dot"></div>Urbanismo crítico</div>
+    <div class="nav-title">GENEALOGÍAS · CONSTELACIÓN · RELACIONES</div>
+    <div class="actions">
+      <button id="resetBtn" title="Volver a la vista general">Reset</button>
+      <button id="rotateBtn" class="active" title="Activar/desactivar rotación orbital">Órbita</button>
+    </div>
+  </div>
+
+  <section class="header">
+    <h1>Historia del<br>Urbanismo Crítico</h1>
+    <div class="subtitle">Diagrama web navegable · Orígenes, rupturas y futuros</div>
+    <p>Una cartografía de relaciones entre periodos, autores, conceptos, luchas urbanas y métodos críticos. Navega la constelación para ver cómo la crítica urbana emerge desde la cuestión social, atraviesa la modernidad y llega a debates contemporáneos sobre clima, datos, IA, género y decolonialidad.</p>
+  </section>
+
+  <div class="searchbox">
+    <span>⌕</span>
+    <input id="search" type="search" placeholder="Buscar nodo, autor, corriente, método..." autocomplete="off" />
+  </div>
+
+  <aside class="timeline" id="timeline"></aside>
+
+  <aside class="legend">
+    <h3>Leyenda de nodos</h3>
+    <div id="legendTypes"></div>
+    <div style="height:1px;background:#ffffff13;margin:14px 0"></div>
+    <h3>Tipos de relación</h3>
+    <div class="row"><span style="width:38px;height:1px;background:#fff;display:inline-block"></span>influencia directa</div>
+    <div class="row"><span style="width:38px;height:1px;border-top:1px dashed #fff;display:inline-block"></span>crítica / ruptura</div>
+    <div class="row"><span style="width:38px;height:1px;border-top:1px dotted #fff;display:inline-block"></span>diálogo / afinidad</div>
+    <div class="row"><span style="width:38px;height:1px;background:linear-gradient(90deg,#fff,transparent);display:inline-block"></span>continuidad / deriva</div>
+  </aside>
+
+  <aside class="reader" id="reader">
+    <div class="reader-head">
+      <div class="reader-icon" id="readerIcon">✦</div>
+      <div class="reader-title"><h2 id="readerTitle">Selecciona un nodo</h2><small id="readerMeta">—</small></div>
+      <button class="reader-close" id="readerClose">×</button>
+    </div>
+    <div class="reader-body" id="readerBody"></div>
+  </aside>
+
+  <aside class="controls">
+    <h3>Cómo navegar</h3>
+    <div class="grid">
+      <button id="zoomIn">Zoom +</button>
+      <button id="zoomOut">Zoom −</button>
+      <button id="allBtn" class="active">Todos</button>
+      <button id="focusCritical">Crítica</button>
+    </div>
+    <div class="hint">
+      Arrastra con clic izquierdo para mover la constelación. Mantén pulsado el scroll y arrastra para orbitar en 3D. Usa la rueda para acercar/alejar. Haz clic en un nodo para ver su ficha.
+    </div>
+  </aside>
+
+  <div class="modebar">
+    <span class="chip active" data-mode="relations">Relaciones</span>
+    <span class="chip" data-mode="periods">Periodos</span>
+    <span class="chip" data-mode="authors">Autores</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="statNodes">0</b><span>Nodos</span></div>
+    <div class="stat"><b id="statEdges">0</b><span>Relaciones</span></div>
+    <div class="stat"><b>8</b><span>Periodos</span></div>
+  </div>
+
+  <div class="big-label" id="bigLabel">CONSTELACIÓN</div>
+  <div class="caption">Hacia ciudades más justas, diversas, habitables y políticamente conscientes.</div>
+  <div class="mobile-warning">Para navegar mejor esta constelación, usa pantalla horizontal o escritorio. En computadora puedes pulsar el scroll para orbitar en 3D.</div>
+</div>
+
+<script>
+(function(){
+const periods=[
+  {id:'p0',n:1,name:'Orígenes y precursores',years:'1800–1890',color:'#f1b934'},
+  {id:'p1',n:2,name:'Reforma social e higienismo',years:'1890–1918',color:'#ffcc55'},
+  {id:'p2',n:3,name:'Modernidad y planificación',years:'1918–1945',color:'#4aa3ff'},
+  {id:'p3',n:4,name:'Posguerra y críticas al modernismo',years:'1945–1968',color:'#ff784a'},
+  {id:'p4',n:5,name:'Emergencias del urbanismo crítico',years:'1968–1985',color:'#b56cff'},
+  {id:'p5',n:6,name:'Giro neoliberal y globalización',years:'1985–2000',color:'#2ed7d2'},
+  {id:'p6',n:7,name:'Giro socioambiental y decolonial',years:'2000–2015',color:'#9ad45a'},
+  {id:'p7',n:8,name:'Contemporáneo y futuros críticos',years:'2015–hoy',color:'#d7ee52'}
+];
+
+const types={
+  origen:{label:'Origen / precursor',color:'#f1b934',icon:'◆'},
+  moderno:{label:'Modernidad / planificación',color:'#4aa3ff',icon:'▣'},
+  critica:{label:'Crítica al modernismo',color:'#ff784a',icon:'✦'},
+  radical:{label:'Crítica radical / social',color:'#b56cff',icon:'✹'},
+  global:{label:'Global / neoliberal',color:'#2ed7d2',icon:'◈'},
+  socioeco:{label:'Socioambiental / decolonial',color:'#9ad45a',icon:'✺'},
+  futuro:{label:'Contemporáneo / futuros',color:'#d7ee52',icon:'✧'},
+  autor:{label:'Autor / referente clave',color:'#ffffff',icon:'★'}
+};
+
+const nodes=[
+{id:'industrial',label:'Revolución industrial',period:'p0',type:'origen',year:'s. XIX',size:14,desc:'Crecimiento urbano acelerado, fábricas, hacinamiento y aparición de la cuestión social urbana.',ideas:['Ciudad obrera','Contaminación','Infraestructura moderna','Segregación temprana'],legacy:'Abre el problema central: la ciudad como campo de conflicto social y técnico.'},
+{id:'utopico',label:'Socialismo utópico',period:'p0',type:'origen',year:'1820–1860',size:13,desc:'Fourier, Owen y Saint-Simon imaginaron comunidades productivas y cooperativas frente a la ciudad industrial.',ideas:['Cooperación','Falansterio','Ciudad productiva','Reforma social'],legacy:'Prefigura urbanismos comunitarios, cooperativas y autogestión.'},
+{id:'burguesa',label:'Ciudad burguesa',period:'p0',type:'origen',year:'s. XIX',size:12,desc:'Reordenamiento de la ciudad como espacio de circulación, consumo y representación de clase.',ideas:['Boulevards','Centralidad','Orden público','Renta urbana'],legacy:'Será criticada por producir exclusión y estetizar la desigualdad.'},
+{id:'haussmann',label:'Haussmann / París',period:'p0',type:'origen',year:'1853–1870',size:12,desc:'Transformación monumental de París mediante ejes, saneamiento y control político del espacio.',ideas:['Apertura vial','Control social','Embellecimiento','Desplazamiento'],legacy:'Modelo inicial de modernización urbana con efectos de expulsión.'},
+{id:'ensanche',label:'Ensanches y reforma urbana',period:'p0',type:'origen',year:'1859–1900',size:11,desc:'Cerdà y otros proyectos intentan ordenar expansión, movilidad e higiene mediante trama y regulación.',ideas:['Trama regular','Infraestructura','Manzana','Accesibilidad'],legacy:'Conecta técnica urbanística con preocupación social e higiénica.'},
+
+{id:'higienismo',label:'Higienismo',period:'p1',type:'origen',year:'1890–1920',size:14,desc:'La salud pública se vuelve criterio de intervención urbana: aire, luz, agua, alcantarillado y control de epidemias.',ideas:['Saneamiento','Ventilación','Control sanitario','Reforma municipal'],legacy:'Ambivalente: mejora condiciones urbanas, pero también disciplina cuerpos y barrios populares.'},
+{id:'philanthropy',label:'Filantropía urbana',period:'p1',type:'origen',year:'1890–1920',size:10,desc:'Vivienda obrera, reformismo social y moralización de la pobreza urbana.',ideas:['Vivienda obrera','Reforma moral','Paternalismo','Cuestión social'],legacy:'Introduce el problema habitacional como asunto público.'},
+{id:'garden',label:'Ciudad jardín',period:'p1',type:'origen',year:'1898',size:14,desc:'Ebenezer Howard plantea una síntesis ciudad-campo como alternativa a la congestión industrial.',ideas:['Cinturón verde','Cooperación','Descentralización','Suelo comunitario'],legacy:'Influye en suburbios, planificación regional y críticas al hacinamiento.'},
+{id:'geddes',label:'Patrick Geddes',period:'p1',type:'autor',year:'1915',size:13,desc:'Propone observar antes de planificar: survey before plan, región, biología social y Valley Section.',ideas:['Transecto','Región','Observación','Evolución urbana'],legacy:'Antecedente directo de métodos de campo, transectos críticos y lectura territorial.'},
+{id:'chicago',label:'Escuela de Chicago',period:'p1',type:'origen',year:'1915–1930',size:11,desc:'Ecología urbana y análisis de la ciudad como mosaico de áreas sociales, migración y conflicto.',ideas:['Zonas concéntricas','Migración','Ecología humana','Segregación'],legacy:'Aporta herramientas para pensar estructura social y forma urbana.'},
+
+{id:'ciam',label:'CIAM',period:'p2',type:'moderno',year:'1928',size:13,desc:'Congresos internacionales que consolidan el urbanismo funcionalista moderno.',ideas:['Zonificación','Estándares','Vivienda mínima','Función'],legacy:'Marco que luego será cuestionado por su abstracción y universalismo.'},
+{id:'modern',label:'Movimiento moderno',period:'p2',type:'moderno',year:'1920–1945',size:16,desc:'Urbanismo de la razón técnica: orden, función, higiene, circulación y vivienda masiva.',ideas:['Racionalización','Tipología','Tabula rasa','Plan maestro'],legacy:'Es el gran objeto de crítica de Jacobs, Lefebvre, Team 10 y situacionistas.'},
+{id:'athens',label:'Carta de Atenas',period:'p2',type:'moderno',year:'1933',size:13,desc:'Documento emblemático que separa la ciudad en funciones: habitar, trabajar, recrearse y circular.',ideas:['Función','Zonificación','Eficiencia','Higiene'],legacy:'Símbolo del urbanismo funcionalista criticado por desactivar mezcla y vida cotidiana.'},
+{id:'regional',label:'Planificación regional',period:'p2',type:'moderno',year:'1930–1945',size:11,desc:'Escalas territoriales, infraestructura y distribución de actividades como proyecto estatal.',ideas:['Región','Infraestructura','Estado','Crecimiento'],legacy:'Permite pensar la ciudad más allá del límite administrativo.'},
+{id:'estado',label:'Estado planificador',period:'p2',type:'moderno',year:'1930–1960',size:12,desc:'El Estado asume vivienda, equipamiento, vialidad y regulación como instrumentos de modernización.',ideas:['Política pública','Vivienda social','Equipamientos','Norma'],legacy:'Genera capacidades públicas, pero también centralización y paternalismo técnico.'},
+{id:'brasilia',label:'Brasilia',period:'p2',type:'moderno',year:'1960',size:12,desc:'Capital moderna: monumentalidad, zonificación y utopía estatal de la tabula rasa.',ideas:['Eje monumental','Funcionalismo','Estado nación','Automóvil'],legacy:'Caso clave para discutir límites sociales del modernismo.'},
+
+{id:'team10',label:'Team 10',period:'p3',type:'critica',year:'1953–1968',size:12,desc:'Ruptura interna del CIAM; propone asociación, hábitat, escalas intermedias y vida cotidiana.',ideas:['Asociación','Identidad','Hábitat','Escala humana'],legacy:'Puente entre modernismo y crítica urbana postfuncionalista.'},
+{id:'jacobs',label:'Jane Jacobs',period:'p3',type:'critica',year:'1961',size:15,desc:'Defiende diversidad, mezcla de usos, ojos en la calle y complejidad del barrio frente al plan abstracto.',ideas:['Diversidad','Calle viva','Mezcla de usos','Observación'],legacy:'Funda una crítica empírica y cotidiana al urbanismo modernista.'},
+{id:'frankfurt',label:'Escuela de Frankfurt',period:'p3',type:'critica',year:'1930–1968',size:12,desc:'Teoría crítica de la modernidad, racionalidad instrumental y cultura administrada.',ideas:['Crítica de la razón','Poder','Alienación','Modernidad'],legacy:'Da lenguaje filosófico para leer ciudad, técnica y dominación.'},
+{id:'situacionismo',label:'Situacionismo',period:'p3',type:'critica',year:'1957–1972',size:14,desc:'Debord y la Internacional Situacionista critican la ciudad espectacular y experimentan deriva y psicogeografía.',ideas:['Deriva','Psicogeografía','Espectáculo','Vida cotidiana'],legacy:'Influye en métodos experimentales, contra-cartografía y urbanismo táctico.'},
+{id:'megastructures',label:'Megastructuras y críticas',period:'p3',type:'critica',year:'1960s',size:11,desc:'Utopías tecnológicas de gran escala que revelan tensiones entre flexibilidad, control y vida real.',ideas:['Megaforma','Tecnoutopía','Infraestructura','Crítica'],legacy:'Anticipa debates sobre grandes proyectos, capital y control.'},
+{id:'desarrollismo',label:'Desarrollismo y dependencia',period:'p3',type:'critica',year:'1950–1970',size:12,desc:'Modernización latinoamericana, industrialización parcial y urbanización acelerada bajo dependencia.',ideas:['Centro-periferia','Migración','Estado desarrollista','Informalidad'],legacy:'Abre la lectura estructural de la ciudad latinoamericana.'},
+
+{id:'lefebvre',label:'Henri Lefebvre',period:'p4',type:'autor',year:'1968–1974',size:17,desc:'Plantea el derecho a la ciudad y la producción social del espacio: percibido, concebido y vivido.',ideas:['Derecho a la ciudad','Espacio vivido','Vida cotidiana','Apropiación'],legacy:'Pilar teórico del urbanismo crítico contemporáneo.'},
+{id:'derecho',label:'Derecho a la ciudad',period:'p4',type:'radical',year:'1968+',size:16,desc:'Reclamo colectivo por transformar la ciudad y disputar su producción contra la lógica mercantil.',ideas:['Apropiación','Centralidad','Participación','Valor de uso'],legacy:'Articula movimientos sociales, políticas urbanas y justicia espacial.'},
+{id:'movsociales',label:'Movimientos sociales urbanos',period:'p4',type:'radical',year:'1970–1985',size:14,desc:'Organizaciones vecinales, luchas por vivienda, servicios, tierra y reconocimiento territorial.',ideas:['Autogestión','Lucha barrial','Servicios','Territorio'],legacy:'Traslada el urbanismo crítico del texto a la acción colectiva.'},
+{id:'radicalarch',label:'Arquitectura radical',period:'p4',type:'radical',year:'1968–1980',size:12,desc:'Archigram, Superstudio, Metabolistas y otros imaginaron críticas especulativas al orden urbano.',ideas:['Utopía crítica','Anti-plan','Tecnología','Megaestructura'],legacy:'Expande el urbanismo como imaginación política y visual.'},
+{id:'feminismo',label:'Feminismo urbano',period:'p4',type:'radical',year:'1970+',size:12,desc:'Critica la división público/privado, cuidados invisibles, miedo urbano y sesgos de género en la planificación.',ideas:['Cuidados','Seguridad','Cuerpo','Vida cotidiana'],legacy:'Reformula la pregunta por quién diseña y para quién funciona la ciudad.'},
+{id:'insurgente',label:'Urbanismo insurgente',period:'p4',type:'radical',year:'1980+',size:12,desc:'Prácticas urbanas desde abajo que disputan legalidad, territorio y ciudadanía.',ideas:['Acción directa','Ocupación','Autonomía','Conflicto'],legacy:'Anticipa urbanismo táctico, comunes y planificación insurgente.'},
+{id:'castells',label:'Manuel Castells',period:'p4',type:'autor',year:'1972–1983',size:12,desc:'Analiza la cuestión urbana, movimientos sociales y ciudad como expresión de relaciones de producción.',ideas:['Consumo colectivo','Movimientos urbanos','Estado','Capital'],legacy:'Conecta marxismo urbano con sociología de movimientos.'},
+
+{id:'harvey',label:'David Harvey',period:'p5',type:'autor',year:'1982–2012',size:16,desc:'Explica urbanización del capital, acumulación por desposesión y derecho a la ciudad como lucha colectiva.',ideas:['Capital fijo','Desposesión','Renta','Crisis urbana'],legacy:'Clave para leer neoliberalismo urbano, megaproyectos y gentrificación.'},
+{id:'neoliberal',label:'Neoliberalismo urbano',period:'p5',type:'global',year:'1980–2000',size:15,desc:'La ciudad se gestiona como empresa: competitividad, marketing urbano, privatización y renta del suelo.',ideas:['Ciudad-empresa','Privatización','Competencia','Renta'],legacy:'Objeto central de crítica por producir desigualdad y expulsión.'},
+{id:'globalcities',label:'Ciudades globales',period:'p5',type:'global',year:'1991+',size:13,desc:'Sassen y otros estudian nodos financieros, redes globales y polarización socioespacial.',ideas:['Finanzas','Redes','Servicios avanzados','Polarización'],legacy:'Ubica la ciudad dentro de cadenas globales de poder económico.'},
+{id:'gentrificacion',label:'Gentrificación',period:'p5',type:'global',year:'1980+',size:14,desc:'Revalorización de áreas urbanas que desplaza habitantes y transforma la vida barrial.',ideas:['Desplazamiento','Renta diferencial','Patrimonio','Turistificación'],legacy:'Conecta mercado inmobiliario, cultura y desigualdad.'},
+{id:'soja',label:'Edward Soja',period:'p5',type:'autor',year:'1996–2010',size:13,desc:'Propone tercer espacio y justicia espacial como marcos para comprender desigualdad urbana.',ideas:['Tercer espacio','Justicia espacial','Posmetrópolis','Geografías críticas'],legacy:'Vuelve explícita la justicia espacial como horizonte político.'},
+{id:'informalidad',label:'Informalidad urbana',period:'p5',type:'global',year:'1970+',size:14,desc:'Producción social del hábitat fuera o en los bordes de la norma, no como anomalía sino como lógica urbana.',ideas:['Autoconstrucción','Tierra','Servicios','Regularización'],legacy:'Eje de análisis latinoamericano y del Sur Global.'},
+{id:'segregacion',label:'Segregación socioespacial',period:'p5',type:'global',year:'1990+',size:13,desc:'Separación de grupos sociales mediante mercado, norma, infraestructura, seguridad y estigma.',ideas:['Fragmentación','Enclaves','Periferia','Accesibilidad'],legacy:'Indicador central de vulnerabilidad urbana.'},
+{id:'postcolonial',label:'Crítica postcolonial',period:'p5',type:'global',year:'1990+',size:12,desc:'Cuestiona la universalidad de modelos urbanos eurocéntricos y la producción colonial de saber.',ideas:['Eurocentrismo','Subalternidad','Conocimiento situado','Representación'],legacy:'Prepara el giro decolonial y el urbanismo del Sur.'},
+
+{id:'ecopolitica',label:'Ecología política urbana',period:'p6',type:'socioeco',year:'2000+',size:14,desc:'Analiza metabolismo, agua, residuos, energía y naturaleza urbana como relaciones de poder.',ideas:['Metabolismo','Justicia ambiental','Extractivismo','Naturaleza urbana'],legacy:'Conecta ciudad, crisis ecológica y desigualdad.'},
+{id:'justambiental',label:'Justicia ambiental',period:'p6',type:'socioeco',year:'2000+',size:13,desc:'Distribución desigual de riesgos, contaminación, déficit de servicios y beneficios ambientales.',ideas:['Riesgo','Contaminación','Vulnerabilidad','Reparación'],legacy:'Amplía la justicia espacial hacia cuerpos, ecosistemas y salud.'},
+{id:'decolonial',label:'Decolonialidad del espacio',period:'p6',type:'socioeco',year:'2000+',size:14,desc:'Interroga colonialidad, raza, territorio, saberes y formas no occidentales de habitar.',ideas:['Colonialidad','Territorio','Saber situado','Pluralidad'],legacy:'Disputa quién produce teoría urbana y desde dónde.'},
+{id:'surg',label:'Sur Global y descolonización',period:'p6',type:'socioeco',year:'2000+',size:13,desc:'Reubica ciudades africanas, asiáticas y latinoamericanas como centros de teoría, no solo casos de estudio.',ideas:['Sur Global','Comparación situada','Aprendizaje inverso','Pluralismo'],legacy:'Rechaza la idea de un único camino moderno.'},
+{id:'buenvivir',label:'Buen Vivir / Sumak Kawsay',period:'p6',type:'socioeco',year:'2008+',size:12,desc:'Horizonte político que vincula comunidad, naturaleza, derechos colectivos y crítica al desarrollo.',ideas:['Derechos de la naturaleza','Comunidad','Postdesarrollo','Territorio'],legacy:'Ofrece marco latinoamericano para imaginar otros urbanismos.'},
+{id:'comunes',label:'Comunes urbanos',period:'p6',type:'socioeco',year:'2010+',size:13,desc:'Espacios, infraestructuras y prácticas gestionadas colectivamente fuera de la dicotomía Estado-mercado.',ideas:['Autogestión','Cooperación','Cuidado','Uso común'],legacy:'Fortalece urbanismos comunitarios y políticas de proximidad.'},
+{id:'participacion',label:'Participación y co-diseño',period:'p6',type:'socioeco',year:'2000+',size:12,desc:'Métodos colaborativos para incorporar actores, conflictos y saberes locales en el proyecto urbano.',ideas:['Co-diseño','Talleres','Cartografía social','Gobernanza'],legacy:'Mueve el urbanismo desde el experto hacia procesos colectivos.'},
+{id:'resiliencia',label:'Resiliencia crítica',period:'p6',type:'socioeco',year:'2010+',size:11,desc:'Respuesta a crisis climáticas y sociales sin ocultar desigualdades ni responsabilizar a comunidades vulnerables.',ideas:['Riesgo','Adaptación','Capacidad comunitaria','Crítica'],legacy:'Evita convertir la resiliencia en discurso tecnocrático.'},
+
+{id:'clima',label:'Crisis climática urbana',period:'p7',type:'futuro',year:'2015+',size:15,desc:'Calor, inundaciones, subida del mar y eventos extremos reorganizan la agenda urbana.',ideas:['Adaptación','Mitigación','Riesgo','Justicia climática'],legacy:'Obliga a pensar ciudad, infraestructura y territorio con horizonte planetario.'},
+{id:'datos',label:'Datos y vigilancia',period:'p7',type:'futuro',year:'2015+',size:13,desc:'Sensores, plataformas, cámaras y analítica urbana generan nuevas formas de control y conocimiento.',ideas:['Smart city','Vigilancia','Plataformas','Privacidad'],legacy:'Abre la pregunta ética: ¿quién captura datos y para quién se gobierna?'},
+{id:'ia',label:'IA y ciudad',period:'p7',type:'futuro',year:'2020+',size:14,desc:'Modelos predictivos, visión computacional y simulación urbana pueden apoyar diagnóstico o reproducir sesgos.',ideas:['Algoritmos','Sesgo','Simulación','Diagnóstico'],legacy:'Nuevo campo crítico para cruzar técnica, justicia y gobernanza.'},
+{id:'plataformas',label:'Urbanismo de plataformas',period:'p7',type:'futuro',year:'2015+',size:12,desc:'Airbnb, delivery, movilidad bajo demanda y logística transforman vivienda, trabajo y espacio público.',ideas:['Plataformización','Trabajo precario','Turistificación','Logística'],legacy:'Actualiza la crítica al neoliberalismo urbano.'},
+{id:'cuidados',label:'Ciudad de cuidados',period:'p7',type:'futuro',year:'2020+',size:13,desc:'Reorganiza tiempos, proximidad, movilidad y servicios desde la reproducción de la vida cotidiana.',ideas:['Proximidad','Género','Tiempo urbano','Equipamientos'],legacy:'Conecta feminismo urbano con política pública contemporánea.'},
+{id:'reparacion',label:'Urbanismo reparativo',period:'p7',type:'futuro',year:'2020+',size:12,desc:'Enfoca reparación de daños históricos, ambientales y socioespaciales.',ideas:['Memoria','Reparación','Redistribución','Cuidado'],legacy:'Pasa de mitigar impactos a reconocer deudas urbanas.'},
+{id:'futuros',label:'Futuros críticos',period:'p7',type:'futuro',year:'hoy',size:13,desc:'Prospectiva, ficción urbana y escenarios para imaginar transiciones justas más allá de la ciudad mercantil.',ideas:['Escenarios','Imaginación política','Transición justa','Diseño especulativo'],legacy:'Convierte el urbanismo crítico en práctica de anticipación.'}
+];
+
+const edges=[
+['industrial','higienismo','directa',3],['industrial','utopico','critica',2],['industrial','burguesa','directa',2],['burguesa','haussmann','directa',3],['haussmann','gentrificacion','dialogo',1],
+['utopico','garden','dialogo',2],['ensanche','higienismo','directa',2],['ensanche','modern','directa',1],['higienismo','ciam','directa',2],['garden','regional','directa',2],['geddes','regional','directa',2],['geddes','participacion','dialogo',1],['chicago','segregacion','directa',2],
+['ciam','modern','directa',3],['modern','athens','directa',3],['athens','estado','directa',2],['modern','brasilia','directa',2],['regional','estado','directa',2],['estado','desarrollismo','directa',2],
+['modern','team10','critica',2],['modern','jacobs','critica',3],['athens','jacobs','critica',3],['frankfurt','situacionismo','dialogo',1],['situacionismo','lefebvre','dialogo',2],['situacionismo','radicalarch','dialogo',2],['team10','jacobs','dialogo',1],['desarrollismo','informalidad','directa',2],['desarrollismo','postcolonial','dialogo',1],
+['jacobs','derecho','dialogo',1],['lefebvre','derecho','directa',3],['lefebvre','movsociales','directa',2],['castells','movsociales','directa',3],['frankfurt','lefebvre','dialogo',1],['feminismo','cuidados','directa',3],['insurgente','comunes','directa',2],['movsociales','participacion','directa',2],['radicalarch','futuros','dialogo',1],
+['harvey','neoliberal','critica',3],['harvey','gentrificacion','directa',3],['harvey','derecho','directa',2],['neoliberal','globalcities','directa',2],['neoliberal','gentrificacion','directa',3],['neoliberal','plataformas','directa',2],['globalcities','datos','dialogo',1],['soja','segregacion','directa',2],['soja','derecho','dialogo',1],['informalidad','surg','directa',2],['postcolonial','decolonial','directa',2],
+['ecopolitica','justambiental','directa',3],['justambiental','clima','directa',2],['decolonial','surg','directa',3],['surg','buenvivir','dialogo',2],['buenvivir','ecopolitica','dialogo',1],['comunes','participacion','dialogo',2],['participacion','reparacion','directa',1],['resiliencia','clima','directa',2],['resiliencia','justambiental','critica',1],
+['clima','futuros','directa',2],['datos','ia','directa',3],['datos','plataformas','directa',2],['ia','futuros','dialogo',2],['cuidados','reparacion','dialogo',2],['plataformas','gentrificacion','directa',2],['reparacion','justambiental','dialogo',2],
+['industrial','neoliberal','dialogo',1],['burguesa','segregacion','directa',1],['haussmann','derecho','critica',1],['higienismo','datos','dialogo',1],['chicago','datos','dialogo',1],['modern','datos','dialogo',1],['athens','smart','dialogo',1],
+['informalidad','justambiental','dialogo',2],['segregacion','justambiental','directa',2],['segregacion','clima','directa',1],['gentrificacion','reparacion','critica',2]
+].filter(e=>nodes.find(n=>n.id===e[0])&&nodes.find(n=>n.id===e[1]));
+
+const canvas=document.getElementById('network'), ctx=canvas.getContext('2d');
+const stars=document.getElementById('stars'), sctx=stars.getContext('2d');
+const fx=document.getElementById('fx'), fctx=fx.getContext('2d');
+const app=document.getElementById('app');
+
+let W=0,H=0,dpr=1,starsData=[];
+let cam={x:0,y:0,z:1,rx:-0.06,ry:0};
+let drag=false,dragStart=null,camStart=null,selected=null,hover=null,activePeriod=null,mode='relations';
+let autoRotate=true,searchTerm='',focusOnlyCritical=false;
+const nodeMap=new Map(nodes.map(n=>[n.id,n]));
+const neighbors=new Map(nodes.map(n=>[n.id,new Set()]));
+edges.forEach(e=>{neighbors.get(e[0]).add(e[1]);neighbors.get(e[1]).add(e[0]);});
+
+function setupPositions(){
+  const groups={}; periods.forEach(p=>groups[p.id]=[]);
+  nodes.forEach(n=>groups[n.period].push(n));
+  periods.forEach((p,pi)=>{
+    const list=groups[p.id], count=list.length;
+    const ring=160+pi*68;
+    list.forEach((n,i)=>{
+      const t=(i/count)*Math.PI*2 + (pi%2)*0.28;
+      const spread=0.66+Math.sin(pi)*0.08;
+      n.x=Math.cos(t)*ring*1.46;
+      n.y=(pi-3.5)*88 + Math.sin(t)*ring*0.22;
+      n.z=Math.sin(t)*ring*spread;
+      n.baseX=n.x;n.baseY=n.y;n.baseZ=n.z;
+      n.pulse=Math.random()*Math.PI*2;
+    });
+  });
+}
+setupPositions();
+
+function resize(){
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  W=app.clientWidth; H=app.clientHeight;
+  [canvas,stars,fx].forEach(c=>{c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';});
+  ctx.setTransform(dpr,0,0,dpr,0,0);sctx.setTransform(dpr,0,0,dpr,0,0);fctx.setTransform(dpr,0,0,dpr,0,0);
+  cam.x=W/2; cam.y=H/2+10;
+  makeStars();
+}
+window.addEventListener('resize',resize);
+resize();
+
+function makeStars(){
+  starsData=[];
+  for(let i=0;i<520;i++){
+    starsData.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.35+.15,a:Math.random()*.75+.12,v:Math.random()*.25+.05});
+  }
+}
+function drawStars(time){
+  sctx.clearRect(0,0,W,H);
+  const g=sctx.createRadialGradient(W*.5,H*.45,20,W*.5,H*.45,Math.max(W,H)*.75);
+  g.addColorStop(0,'rgba(40,68,112,.34)');
+  g.addColorStop(.42,'rgba(12,18,33,.26)');
+  g.addColorStop(1,'rgba(0,0,0,1)');
+  sctx.fillStyle=g;sctx.fillRect(0,0,W,H);
+  starsData.forEach(st=>{
+    const a=st.a*(.68+.32*Math.sin(time*.001*st.v+st.x));
+    sctx.beginPath();sctx.arc(st.x,st.y,st.r,0,Math.PI*2);sctx.fillStyle=`rgba(220,235,255,${a})`;sctx.fill();
+  });
+}
+
+function project(n){
+  let x=n.x,y=n.y,z=n.z;
+  const cy=Math.cos(cam.ry), sy=Math.sin(cam.ry), cx=Math.cos(cam.rx), sx=Math.sin(cam.rx);
+  let x1=x*cy-z*sy, z1=x*sy+z*cy;
+  let y1=y*cx-z1*sx, z2=y*sx+z1*cx;
+  const persp=880/(880+z2);
+  return {x:cam.x+x1*cam.z*persp,y:cam.y+y1*cam.z*persp,z:z2,scale:persp*cam.z};
+}
+function colorFor(n){return types[n.type].color}
+function periodFor(n){return periods.find(p=>p.id===n.period)}
+function isVisible(n){
+  if(activePeriod&&n.period!==activePeriod)return false;
+  if(focusOnlyCritical && !['critica','radical','global','socioeco','futuro','autor'].includes(n.type)) return false;
+  if(searchTerm){
+    const bag=(n.label+' '+n.year+' '+n.desc+' '+(n.ideas||[]).join(' ')).toLowerCase();
+    if(!bag.includes(searchTerm)) return false;
+  }
+  return true;
+}
+function alphaFor(n){
+  if(!isVisible(n)) return .06;
+  if(selected){
+    if(n.id===selected.id)return 1;
+    if(neighbors.get(selected.id).has(n.id))return .82;
+    return .18;
+  }
+  if(hover){
+    if(n.id===hover.id)return 1;
+    if(neighbors.get(hover.id).has(n.id))return .65;
+    return .36;
+  }
+  return .95;
+}
+function edgeAlpha(e){
+  const a=nodeMap.get(e[0]),b=nodeMap.get(e[1]);
+  if(!isVisible(a)||!isVisible(b))return .025;
+  if(selected){
+    if(a.id===selected.id||b.id===selected.id)return .88;
+    return .035;
+  }
+  if(hover){
+    if(a.id===hover.id||b.id===hover.id)return .45;
+    return .08;
+  }
+  if(mode==='periods')return a.period===b.period?.20:.06;
+  if(mode==='authors')return (a.type==='autor'||b.type==='autor')?.36:.055;
+  return .18;
+}
+function edgeStyle(kind){
+  if(kind==='critica')return [5,5];
+  if(kind==='dialogo')return [1,5];
+  if(kind==='deriva')return [10,5];
+  return [];
+}
+
+function drawRings(){
+  ctx.save();
+  ctx.translate(cam.x,cam.y);
+  ctx.scale(cam.z,cam.z*.18);
+  periods.forEach((p,i)=>{
+    const r=160+i*68;
+    ctx.beginPath();
+    ctx.ellipse(0,0,r*1.46,r,0,0,Math.PI*2);
+    ctx.strokeStyle=p.color+(activePeriod===p.id?'aa':'30');
+    ctx.lineWidth=activePeriod===p.id?1.4/cam.z:.8/cam.z;
+    ctx.setLineDash([4/cam.z,10/cam.z]);
+    ctx.stroke();
+  });
+  ctx.restore();
+  ctx.setLineDash([]);
+}
+
+function drawConstellation(time){
+  ctx.clearRect(0,0,W,H);
+  fctx.clearRect(0,0,W,H);
+  if(autoRotate && !drag){cam.ry+=0.00125}
+  drawRings();
+
+  // background orbital glow
+  fctx.save();
+  const glow=fctx.createRadialGradient(W*.5,H*.54,60,W*.5,H*.54,Math.min(W,H)*.78);
+  glow.addColorStop(0,'rgba(96,150,255,.08)');
+  glow.addColorStop(.55,'rgba(133,81,255,.045)');
+  glow.addColorStop(1,'rgba(0,0,0,0)');
+  fctx.fillStyle=glow;fctx.fillRect(0,0,W,H);fctx.restore();
+
+  const projected=new Map();
+  nodes.forEach(n=>{
+    n.x=n.baseX+Math.sin(time*.00045+n.pulse)*8;
+    n.y=n.baseY+Math.cos(time*.0004+n.pulse)*4;
+    n.z=n.baseZ+Math.cos(time*.00055+n.pulse)*10;
+    projected.set(n.id,project(n));
+  });
+
+  // edges sorted behind/front
+  edges.forEach(e=>{
+    const a=nodeMap.get(e[0]),b=nodeMap.get(e[1]),pa=projected.get(a.id),pb=projected.get(b.id);
+    const al=edgeAlpha(e);
+    if(al<=0.01)return;
+    const col=e[2]==='critica'?types.critica.color:(e[2]==='dialogo'?types.radical.color:(colorFor(a)));
+    ctx.save();
+    ctx.beginPath();
+    const mx=(pa.x+pb.x)/2 + (pb.y-pa.y)*0.04;
+    const my=(pa.y+pb.y)/2 - (pb.x-pa.x)*0.04;
+    ctx.moveTo(pa.x,pa.y);ctx.quadraticCurveTo(mx,my,pb.x,pb.y);
+    ctx.strokeStyle=hexA(col,al);
+    ctx.lineWidth=Math.max(.45,e[3]*.45)*Math.min(1.6,Math.max(.65,(pa.scale+pb.scale)/2));
+    ctx.setLineDash(edgeStyle(e[2]));
+    ctx.shadowColor=hexA(col,al*.7);ctx.shadowBlur=selected&&(a.id===selected.id||b.id===selected.id)?12:3;
+    ctx.stroke();ctx.restore();
+  });
+
+  const drawNodes=[...nodes].sort((a,b)=>projected.get(a.id).z-projected.get(b.id).z);
+  drawNodes.forEach(n=>{
+    const p=projected.get(n.id), col=colorFor(n), per=periodFor(n);
+    const al=alphaFor(n), base=(n.size*1.22+4)*p.scale;
+    const r=Math.max(4,base);
+    ctx.save();
+    ctx.globalAlpha=al;
+    ctx.beginPath();ctx.arc(p.x,p.y,r+9*p.scale,0,Math.PI*2);
+    const g=ctx.createRadialGradient(p.x,p.y,1,p.x,p.y,r+18*p.scale);
+    g.addColorStop(0,hexA(col,.32));g.addColorStop(.55,hexA(col,.11));g.addColorStop(1,hexA(col,0));
+    ctx.fillStyle=g;ctx.fill();
+
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fillStyle=hexA(col,.88);ctx.fill();
+    ctx.strokeStyle=hexA('#ffffff',n===selected?.88:.36);ctx.lineWidth=n===selected?2.2:1;ctx.stroke();
+
+    ctx.beginPath();ctx.arc(p.x-r*.28,p.y-r*.32,Math.max(1.6,r*.22),0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.45)';ctx.fill();
+
+    const labelAlpha = al*(p.scale>.55?1:.52);
+    ctx.globalAlpha=labelAlpha;
+    ctx.font=`800 ${Math.max(8,Math.min(13,10.2*p.scale+2))}px Arial`;
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.75)';
+    wrapText(ctx,n.label,p.x,p.y+r+6,96*p.scale+42,14*p.scale+4,true);
+    ctx.fillStyle='#f7fbff';
+    wrapText(ctx,n.label,p.x,p.y+r+6,96*p.scale+42,14*p.scale+4,false);
+    ctx.font=`700 ${Math.max(7,9*p.scale)}px Arial`;
+    ctx.fillStyle=hexA(per.color,.85);
+    ctx.fillText(n.year,p.x,p.y+r+35*p.scale+9);
+    ctx.restore();
+    n._screen={x:p.x,y:p.y,r:r+10,z:p.z};
+  });
+}
+function wrapText(c,text,x,y,maxWidth,lineHeight,stroke){
+  const words=text.split(' ');let line='',yy=y;let lines=0;
+  for(let i=0;i<words.length;i++){
+    const test=line+words[i]+' ';
+    if(c.measureText(test).width>maxWidth&&i>0){
+      stroke?c.strokeText(line.trim(),x,yy):c.fillText(line.trim(),x,yy);line=words[i]+' ';yy+=lineHeight;lines++;
+      if(lines>1){line=line.trim();break;}
+    }else line=test;
+  }
+  stroke?c.strokeText(line.trim(),x,yy):c.fillText(line.trim(),x,yy);
+}
+function hexA(hex,a){
+  if(hex[0]==='#')hex=hex.slice(1);
+  if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
+  const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function hit(x,y){
+  let best=null,dist=Infinity;
+  [...nodes].sort((a,b)=>(b._screen?.z||0)-(a._screen?.z||0)).forEach(n=>{
+    if(!n._screen)return;
+    const dx=x-n._screen.x,dy=y-n._screen.y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<n._screen.r&&d<dist){best=n;dist=d}
+  });
+  return best;
+}
+
+function openNode(n){
+  selected=n;
+  const per=periodFor(n), type=types[n.type];
+  document.getElementById('reader').classList.add('open');
+  document.getElementById('readerIcon').textContent=type.icon;
+  document.getElementById('readerIcon').style.color=type.color;
+  document.getElementById('readerTitle').textContent=n.label;
+  document.getElementById('readerMeta').textContent=`${per.name} · ${n.year} · ${type.label}`;
+  document.getElementById('reader').style.borderColor=hexA(type.color,.55);
+  document.getElementById('bigLabel').textContent=per.name;
+  const rels=edges.filter(e=>e[0]===n.id||e[1]===n.id).map(e=>{
+    const other=nodeMap.get(e[0]===n.id?e[1]:e[0]);
+    return `<span class="rel-pill" data-node="${other.id}">${other.label}</span>`;
+  }).join('');
+  document.getElementById('readerBody').innerHTML=`
+    <div class="reader-section"><div class="label">Concepto</div><div class="text">${n.desc}</div></div>
+    <div class="reader-section"><div class="label">Aportes / ideas clave</div><ul>${n.ideas.map(i=>`<li>${i}</li>`).join('')}</ul></div>
+    <div class="reader-section"><div class="label">Legado crítico</div><div class="text">${n.legacy}</div></div>
+    <div class="reader-section"><div class="label">Relaciones destacadas</div><div class="text">${rels || 'Sin relaciones visibles.'}</div></div>
+  `;
+  document.querySelectorAll('.rel-pill').forEach(p=>p.onclick=()=>focusNode(p.dataset.node));
+}
+function closeReader(){selected=null;document.getElementById('reader').classList.remove('open');document.getElementById('bigLabel').textContent=activePeriod?periods.find(p=>p.id===activePeriod).name:'CONSTELACIÓN'}
+document.getElementById('readerClose').onclick=closeReader;
+
+function focusNode(id){
+  const n=nodeMap.get(id); if(!n)return;
+  selected=n; openNode(n);
+  const p=project(n);
+  cam.x += (W*.5-p.x)*.75;
+  cam.y += (H*.5-p.y)*.75;
+  cam.z=Math.max(cam.z,1.15);
+}
+function buildUI(){
+  const tl=document.getElementById('timeline');
+  periods.forEach(p=>{
+    const el=document.createElement('div'); el.className='period'; el.style.color=p.color; el.dataset.id=p.id;
+    el.innerHTML=`<div class="num">${p.n}</div><div><div class="name">${p.name}</div><div class="years">${p.years}</div></div>`;
+    el.onclick=()=>{
+      activePeriod=activePeriod===p.id?null:p.id;
+      document.querySelectorAll('.period').forEach(x=>x.classList.toggle('active',x.dataset.id===activePeriod));
+      document.getElementById('bigLabel').textContent=activePeriod?p.name:'CONSTELACIÓN';
+      selected=null;document.getElementById('reader').classList.remove('open');
+    };
+    tl.appendChild(el);
+  });
+  const lg=document.getElementById('legendTypes');
+  Object.entries(types).forEach(([k,t])=>{
+    const row=document.createElement('div');row.className='row';
+    row.innerHTML=`<span class="sw" style="color:${t.color};background:${t.color}"></span>${t.label}`;
+    lg.appendChild(row);
+  });
+  document.getElementById('statNodes').textContent=nodes.length;
+  document.getElementById('statEdges').textContent=edges.length;
+}
+buildUI();
+
+document.getElementById('search').addEventListener('input',e=>{
+  searchTerm=e.target.value.trim().toLowerCase();
+  selected=null;document.getElementById('reader').classList.remove('open');
+});
+document.getElementById('resetBtn').onclick=()=>{
+  activePeriod=null;searchTerm='';focusOnlyCritical=false;selected=null;cam.z=1;cam.rx=-.06;cam.ry=0;cam.x=W/2;cam.y=H/2+10;
+  document.getElementById('search').value='';document.querySelectorAll('.period').forEach(x=>x.classList.remove('active'));
+  document.getElementById('allBtn').classList.add('active');document.getElementById('focusCritical').classList.remove('active');closeReader();
+};
+document.getElementById('rotateBtn').onclick=e=>{autoRotate=!autoRotate;e.currentTarget.classList.toggle('active',autoRotate)};
+document.getElementById('zoomIn').onclick=()=>cam.z=Math.min(3.8,cam.z*1.18);
+document.getElementById('zoomOut').onclick=()=>cam.z=Math.max(.48,cam.z/1.18);
+document.getElementById('allBtn').onclick=()=>{focusOnlyCritical=false;document.getElementById('allBtn').classList.add('active');document.getElementById('focusCritical').classList.remove('active')};
+document.getElementById('focusCritical').onclick=()=>{focusOnlyCritical=true;document.getElementById('focusCritical').classList.add('active');document.getElementById('allBtn').classList.remove('active')};
+document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));ch.classList.add('active');mode=ch.dataset.mode});
+
+let dragMode=null;
+
+canvas.addEventListener('mousedown',e=>{
+  e.preventDefault();
+  drag=true;
+  dragMode = (e.button===1 || e.shiftKey) ? 'orbit' : 'pan';
+  canvas.classList.add('drag');
+  dragStart={x:e.clientX,y:e.clientY};
+  camStart={x:cam.x,y:cam.y,ry:cam.ry,rx:cam.rx};
+
+  if(dragMode==='orbit'){
+    autoRotate=false;
+    document.getElementById('rotateBtn').classList.remove('active');
+  }
+});
+
+canvas.addEventListener('auxclick',e=>{
+  if(e.button===1)e.preventDefault();
+});
+
+window.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;
+  if(drag){
+    const dx=e.clientX-dragStart.x,dy=e.clientY-dragStart.y;
+
+    if(dragMode==='orbit'){
+      cam.ry=camStart.ry+dx*.006;
+      cam.rx=Math.max(-1.05,Math.min(.85,camStart.rx+dy*.004));
+      canvas.style.cursor='grabbing';
+    }else{
+      cam.x=camStart.x+dx;
+      cam.y=camStart.y+dy;
+    }
+  }else{
+    hover=hit(x,y);
+    canvas.style.cursor=hover?'pointer':'grab';
+  }
+});
+
+window.addEventListener('mouseup',e=>{
+  if(!drag)return;
+  const moved=Math.abs(e.clientX-dragStart.x)+Math.abs(e.clientY-dragStart.y);
+  const wasOrbit = dragMode==='orbit';
+  drag=false;
+  dragMode=null;
+  canvas.classList.remove('drag');
+
+  if(!wasOrbit && moved<6){
+    const rect=canvas.getBoundingClientRect(), n=hit(e.clientX-rect.left,e.clientY-rect.top);
+    if(n)openNode(n);else closeReader();
+  }
+});
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const old=cam.z, factor=e.deltaY<0?1.12:.89;
+  const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  cam.z=Math.max(.42,Math.min(4.2,cam.z*factor));
+  const ratio=cam.z/old;
+  cam.x=mx-(mx-cam.x)*ratio; cam.y=my-(my-cam.y)*ratio;
+},{passive:false});
+
+canvas.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){const t=e.touches[0];drag=true;dragStart={x:t.clientX,y:t.clientY};camStart={x:cam.x,y:cam.y,ry:cam.ry,rx:cam.rx};}
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  if(drag&&e.touches.length===1){const t=e.touches[0],dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;cam.x=camStart.x+dx;cam.y=camStart.y+dy;}
+},{passive:true});
+canvas.addEventListener('touchend',e=>{drag=false},{passive:true});
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeReader();
+  if(e.key==='+')cam.z=Math.min(4.2,cam.z*1.12);
+  if(e.key==='-')cam.z=Math.max(.42,cam.z/1.12);
+});
+
+let last=0;
+function loop(t){
+  last=t;drawStars(t);drawConstellation(t);requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
